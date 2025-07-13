@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext"; // Adjust path as needed
-import { createClient } from "../utils/supabase/server";
+import { createClient } from "../../utils/supabase/client";
 
 export default function Complaint() {
   const { user } = useAuth();
