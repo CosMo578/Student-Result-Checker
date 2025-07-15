@@ -1,10 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { createClient } from "../../utils/supabase/client";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import html2canvas from 'html2canvas';
+import formatTableName from '../../utils/formatTitle';
+// import autoTable from "jspdf-autotable";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -13,6 +15,7 @@ export default function Dashboard() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null); // Ref to capture table
 
   const [queryData, setQueryData] = useState({
     session: "",
@@ -97,61 +100,119 @@ export default function Dashboard() {
     fetchResults();
   }, [matNum, queryData]);
 
+  // Handle redirect to complaint page with query parameters
+  const handleComplaintRedirect = () => {
+    if (!queryData.level || !queryData.semester || !queryData.session) {
+      alert(
+        "Please select level, semester, and session before submitting a complaint.",
+      );
+      return;
+    }
+    const queryParams = new URLSearchParams({
+      level: queryData.level,
+      semester: queryData.semester,
+      session: queryData.session,
+    }).toString();
+    router.push(`/complaints?${queryParams}`);
+  };
+
   // Generate and download PDF
-  const downloadPDF = () => {
+  // const downloadPDF = () => {
+  //   const doc = new jsPDF();
+  //   doc.text(
+  //     `Results for ${matNum} (${queryData.level}_${queryData.semester}_${queryData.session})`,
+  //     10,
+  //     10,
+  //   );
+
+  //   const headers = [["Course Code", "Units", "Score", "Grade"]];
+  //   const body = Object.keys(results[0])
+  //     .filter((key) => key.endsWith("_grade"))
+  //     .map((gradeKey) => {
+  //       const courseCode = gradeKey.replace("_grade", "").toUpperCase();
+  //       const unitsKey = gradeKey.replace("_grade", "_units");
+  //       const score = results[0][gradeKey] || "-";
+  //       const units = results[0][unitsKey] || "-";
+  //       const getGrade = (score) => {
+  //         if (typeof score !== "number" || isNaN(score)) return "-";
+  //         score;
+  //         if (score >= 75) return "A";
+  //         if (score >= 70) return "AB";
+  //         if (score >= 65) return "B";
+  //         if (score >= 60) return "BC";
+  //         if (score >= 55) return "C";
+  //         if (score >= 50) return "CD";
+  //         if (score >= 45) return "D";
+  //         if (score >= 40) return "E";
+  //         return "F";
+  //       };
+  //       const grade = getGrade(parseInt(score, 10));
+  //       return [courseCode, units, score, grade];
+  //     });
+
+  //   autoTable(doc, {
+  //     head: headers,
+  //     body: body,
+  //     foot: [
+  //       [
+  //         "TGP",
+  //         results[0].tgp,
+  //         "GPA",
+  //         results[0].gpa,
+  //         "Remarks",
+  //         results[0].remarks,
+  //       ],
+  //     ],
+  //   });
+
+  //   doc.save(
+  //     `results_${queryData.level}_${queryData.semester}_${queryData.session}.pdf`,
+  //   );
+  // };
+
+  // Generate and download PDF
+  const downloadPDF = async () => {
+    if (!tableRef.current) return;
+
     const doc = new jsPDF();
-    doc.text(
-      `Results for ${matNum} (${queryData.level}_${queryData.semester}_${queryData.session})`,
-      10,
-      10,
-    );
 
-    const headers = [["Course Code", "Units", "Score", "Grade"]];
-    const body = Object.keys(results[0])
-      .filter((key) => key.endsWith("_grade"))
-      .map((gradeKey) => {
-        const courseCode = gradeKey.replace("_grade", "").toUpperCase();
-        const unitsKey = gradeKey.replace("_grade", "_units");
-        const score = results[0][gradeKey] || "-";
-        const units = results[0][unitsKey] || "-";
-        const grade =
-          score !== "-"
-            ? score >= 70
-              ? "A"
-              : score >= 60
-                ? "B"
-                : score >= 50
-                  ? "C"
-                  : score >= 40
-                    ? "D"
-                    : "F"
-            : "-";
-        return [courseCode, units, score, grade];
-      });
+    const tableName = `(${queryData.level}_${queryData.semester}_${queryData.session})`;
+    const formattedTableName = formatTableName(tableName);
 
-    autoTable(doc, {
-      head: headers,
-      body: body,
-      foot: [
-        [
-          "TGP",
-          results[0].tgp,
-          "GPA",
-          results[0].gpa,
-          "Remarks",
-          results[0].remarks,
-        ],
-      ],
-    });
+    // Add formatted title
+    doc.text(`Results for ${matNum} - ${formattedTableName}`, 10, 10);
+
+    const canvas = await html2canvas(tableRef.current, { scale: 2 }); // Higher scale for better quality
+    const imgData = canvas.toDataURL("image/png");
+    const imgWidth = 190; // Width in mm (A4 page width is 210mm, leaving margins)
+    const pageHeight = 295; // A4 page height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 20;
+
+    // Add image
+    doc.addImage(imgData, "PNG", 20, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // Handle multi-page if content is too tall
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight + 10;
+      doc.addPage();
+      doc.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
 
     doc.save(
       `results_${queryData.level}_${queryData.semester}_${queryData.session}.pdf`,
     );
   };
+
   if (!user) return null;
 
   return (
     <div className="min-h-screen p-10 pt-20">
+        <h1 className="text-2xl capitalize font-bold mb-4">Fetch your result by filling all Input Fields</h1>
+
       {/* Semester and Program Selector */}
       <form className="mt-4">
         <div className="mb-6 grid w-full grid-cols-3 items-center gap-6">
@@ -214,11 +275,17 @@ export default function Dashboard() {
 
       {/* Results Table */}
       {error && <p className="mt-4 text-red-500">{error}</p>}
+
       {loading && <p className="mt-4">Loading results...</p>}
+
       {results.length > 0 && (
         <div className="mt-4">
           {results.map((result, id) => (
-            <div key={id} className="rounded-md bg-gray-300 px-4 py-10">
+            <div
+              key={id}
+              ref={tableRef}
+              className="rounded-md bg-gray-300 px-4 py-10"
+            >
               <h2 className="px-6">
                 MATRICULATION NUBER: {result.matriculation_number}
               </h2>
@@ -241,41 +308,6 @@ export default function Dashboard() {
                       </th>
                     </tr>
                   </thead>
-                  {/* <tbody>
-                    <tr className="border-b border-gray-100 bg-gray-300">
-                      <th
-                        scope="row"
-                        className="whitespace-nowrap px-6 py-4 font-medium text-gray-900"
-                      >
-                        Apple MacBook Pro 17
-                      </th>
-                      <td className="px-6 py-4">Silver</td>
-                      <td className="px-6 py-4">Laptop</td>
-                      <td className="px-6 py-4">$2999</td>
-                    </tr>
-                    <tr className="border-b border-gray-200 bg-gray-300">
-                      <th
-                        scope="row"
-                        className="whitespace-nowrap px-6 py-4 font-medium text-gray-900"
-                      >
-                        Microsoft Surface Pro
-                      </th>
-                      <td className="px-6 py-4">White</td>
-                      <td className="px-6 py-4">Laptop PC</td>
-                      <td className="px-6 py-4">$1999</td>
-                    </tr>
-                    <tr className="bg-gray-300">
-                      <th
-                        scope="row"
-                        className="whitespace-nowrap px-6 py-4 font-medium text-gray-900"
-                      >
-                        Magic Mouse 2
-                      </th>
-                      <td className="px-6 py-4">Black</td>
-                      <td className="px-6 py-4">Accessories</td>
-                      <td className="px-6 py-4">$99</td>
-                    </tr>
-                  </tbody> */}
                   <tbody>
                     {Object.keys(result)
                       .filter((key) => key.endsWith("_grade")) // Get keys like com113_grade, com111_grade, etc.
@@ -337,6 +369,14 @@ export default function Dashboard() {
             disabled={loading}
           >
             Download as PDF
+          </button>
+
+          <button
+            onClick={handleComplaintRedirect}
+            disabled={loading}
+            className="ml-6 mt-4 rounded-lg bg-primary-100 px-4 py-2 text-white"
+          >
+            Submit a Complaint
           </button>
         </div>
       )}
