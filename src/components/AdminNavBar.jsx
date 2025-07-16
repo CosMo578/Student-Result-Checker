@@ -62,7 +62,7 @@ const AdminNavBar = () => {
 
               <h1 className="flex items-center gap-2">
                 Hello Admin,
-                {admin && <p className="text-sm lg:mb-4">{admin.email}</p>}
+                {admin && <p className="text-sm">{admin.email}</p>}
               </h1>
             </div>
 
@@ -100,7 +100,7 @@ const AdminNavBar = () => {
 
             <Link href="/admin/complaints">
               <li
-                className={`${pathname == "/admin/complaints" ? "bg-primary-100 text-white" : "bg-neutral-100 text-neutral-600"} group flex items-center gap-4 rounded-lg p-5`}
+                className={`${pathname.includes("/admin/complaints") ? "bg-primary-100 text-white" : "bg-neutral-100 text-neutral-600"} group flex items-center gap-4 rounded-lg p-5`}
               >
                 <MessageSquareDot /> Complaints
               </li>

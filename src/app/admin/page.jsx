@@ -87,6 +87,7 @@ export default function AdminLogin() {
 
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
+    setError('')
     const { email, password } = values;
     console.log("Log In initiated")
 
