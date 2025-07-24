@@ -1,29 +1,25 @@
+// app/complaints/page.tsx
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { createClient } from "@/app/utils/supabase/client";
-import formatTableName from "@/app/utils/formatTitle";
+import ComplaintForm from "@/components/ComplaintForm";
 
 export default function Complaint() {
   const { user } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [complaint, setComplaint] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matNum, setMatNum] = useState<string | null>(null);
 
-  // Fetch mat_num and pre-fill complaint draft
+  // Fetch matriculation number
   useEffect(() => {
-    // Valid levels
-    const validLevels = ["nd_1", "nd_2", "hnd_1", "hnd_2"];
-
     if (!user) {
       router.push("/login");
       return;
     }
 
-    // Fetch matriculation number
     const fetchMatNum = async () => {
       if (!user?.email) return;
       try {
@@ -41,54 +37,7 @@ export default function Complaint() {
     };
 
     fetchMatNum();
-
-    // Extract query parameters and generate complaint draft
-    const level = searchParams.get("level");
-    const semester = searchParams.get("semester");
-    const session = searchParams.get("session");
-    console.log(level);
-    console.log(semester);
-    console.log(session);
-
-    if (level && semester && session && validLevels.includes(level)) {
-      const tableName = `(${level}_${semester}_${session})`;
-      console.log("Constructed tableName:", tableName);
-      const formattedTableName = formatTableName(tableName);
-      console.log("Formatted tableName:", formattedTableName);
-      const draft = `Subject: Complaint Regarding Academic Results for ${formattedTableName}
-
-  Dear [Recipient/Registrar's Office],
-
-  I am writing to formally lodge a complaint regarding my academic results for ${formattedTableName}. My matriculation number is ${matNum || "[Your Matriculation Number]"}. Below are the details of my concern:
-
-  [Please specify the issue, e.g., discrepancies in grades, missing results, or errors in course records.]
-
-  I kindly request a review of my results and a response addressing this matter at your earliest convenience. Please let me know if additional documentation or information is required.
-
-  Thank you for your attention to this matter.
-
-  Sincerely,
-  ${user?.email || "[Your Name]"}`;
-      setComplaint(draft);
-    } else {
-      // Fallback draft if parameters are missing or invalid
-      const draft = `Subject: Complaint Regarding Academic Results
-
-  Dear [Recipient/Registrar's Office],
-
-  I am writing to formally lodge a complaint regarding my academic results. My matriculation number is ${matNum || "[Your Matriculation Number]"}. Below are the details of my concern:
-
-  [Please specify the issue, e.g., discrepancies in grades, missing results, or errors in course records.]
-
-  I kindly request a review of my results and a response addressing this matter at your earliest convenience. Please let me know if additional documentation or information is required.
-
-  Thank you for your attention to this matter.
-
-  Sincerely,
-  ${user?.email || "[Your Name]"}`;
-      setComplaint(draft);
-    }
-  }, [searchParams, user, router, matNum]);
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +70,13 @@ export default function Complaint() {
     <div className="mt-20 min-h-screen">
       <h1 className="mb-4 text-2xl font-bold">Submit a Complaint</h1>
 
+      <Suspense fallback={<div>Loading complaint form...</div>}>
+        <ComplaintForm
+          user={user}
+          matNum={matNum}
+          setComplaint={setComplaint}
+        />
+      </Suspense>
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
         <textarea
