@@ -121,6 +121,7 @@ export default function Complaint() {
     <div className="mt-20 min-h-screen">
       <h1 className="mb-4 text-2xl font-bold">Submit a Complaint</h1>
 
+
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
         <textarea
           className="w-full rounded-lg border border-gray-300 p-2"
