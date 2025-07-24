@@ -93,7 +93,7 @@ const NavBar = () => {
                 />
               </Link>
 
-              <h1 className="flex items-center text-xl  font-semibold gap-3">
+              <h1 className="flex items-center max-sm:hidden text-xl  font-semibold gap-3">
                 Welcome back
                 {user && (
                   <p className="text-sm">

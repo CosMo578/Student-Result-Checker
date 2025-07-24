@@ -4,23 +4,30 @@ import Image from "next/image";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Upload } from "lucide-react";
+import { LayoutDashboard, Upload } from "lucide-react";
 import { MessageSquareDot } from "lucide-react";
-import { useAdmin } from "../app/context/AdminAuthContext";
+import { Bounce, ToastContainer } from 'react-toastify';
+
+import { useAdmin } from "@/app/context/AdminAuthContext";
+import { toastInfo } from '@/app/utils/functions/toast';
 
 const AdminNavBar = () => {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [clicked, setClicked] = useState(false);
 
   const { admin, signOut } = useAdmin();
 
   const handleSignOut = async () => {
+    console.log('Clicked')
+    setClicked(prev => !prev)
     try {
       await signOut();
-      alert('Sign out Successful!!')
+      toastInfo('Sign out Successful')
     } catch (error) {
       console.error("Sign out error:", error);
     }
+    setClicked(prev => !prev)
   };
 
   return (
@@ -69,7 +76,8 @@ const AdminNavBar = () => {
             <button
               type="button"
               onClick={() => handleSignOut()}
-              className="rounded-lg border-2 border-primary-100 bg-primary-100 px-4 py-2 text-center font-bold text-white hover:bg-transparent hover:text-primary-100"
+              disabled={clicked}
+              className="rounded-lg border-2 border-primary-100 bg-primary-100 px-4 py-2 text-center font-bold text-white hover:bg-transparent hover:text-primary-100 disabled:border-neutral-100 disabled:bg-neutral-100 disabled:hover:text-white"
             >
               Logout
             </button>
@@ -86,7 +94,7 @@ const AdminNavBar = () => {
               <li
                 className={`${pathname == "/admin/dashboard" ? "bg-primary-100 text-white" : "bg-neutral-100 text-neutral-600"} group flex items-center gap-4 rounded-lg p-5`}
               >
-                <Upload /> Dashboard
+                <LayoutDashboard /> Dashboard
               </li>
             </Link>
 
@@ -108,6 +116,20 @@ const AdminNavBar = () => {
           </ul>
         </div>
       </aside>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Bounce}
+      />
     </>
   );
 };

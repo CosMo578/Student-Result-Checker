@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "./app/utils/supabase/server";
+import { createClient } from "@/app/utils/supabase/server";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next({ request: req });

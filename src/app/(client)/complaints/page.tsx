@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "../../context/AuthContext";
-import { createClient } from "../../utils/supabase/client";
-import formatTableName from "../../utils/formatTitle";
+import { useAuth } from "@/app/context/AuthContext";
+import { createClient } from "@/app/utils/supabase/client";
+import formatTableName from "@/app/utils/formatTitle";
 
 export default function Complaint() {
   const { user } = useAuth();
@@ -13,11 +13,11 @@ export default function Complaint() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matNum, setMatNum] = useState<string | null>(null);
 
-  // Valid levels
-  const validLevels = ["nd_1", "nd_2", "hnd_1", "hnd_2"];
-
   // Fetch mat_num and pre-fill complaint draft
   useEffect(() => {
+    // Valid levels
+    const validLevels = ["nd_1", "nd_2", "hnd_1", "hnd_2"];
+
     if (!user) {
       router.push("/login");
       return;
@@ -96,16 +96,14 @@ export default function Complaint() {
 
     try {
       const supabase = await createClient();
-      const { error } = await supabase
-        .from("complaints")
-        .insert([
-          {
-            user_email: user.email,
-            matriculation_number: matNum,
-            content: complaint,
-            status: "pending",
-          },
-        ]);
+      const { error } = await supabase.from("complaints").insert([
+        {
+          user_email: user.email,
+          matriculation_number: matNum,
+          content: complaint,
+          status: "pending",
+        },
+      ]);
 
       if (error) throw error;
 
@@ -120,7 +118,7 @@ export default function Complaint() {
   };
 
   return (
-    <div className="mt-20 min-h-screen p-10">
+    <div className="mt-20 min-h-screen">
       <h1 className="mb-4 text-2xl font-bold">Submit a Complaint</h1>
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">

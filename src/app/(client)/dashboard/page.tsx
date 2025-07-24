@@ -210,12 +210,12 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen p-10 pt-20">
+    <div className="min-h-screen pt-20">
         <h1 className="text-2xl capitalize font-bold mb-4">Fetch your result by filling all Input Fields</h1>
 
       {/* Semester and Program Selector */}
       <form className="mt-4">
-        <div className="mb-6 grid w-full grid-cols-3 items-center gap-6">
+        <div className="mb-6 grid w-full grid-cols-3 items-center gap-2 md:gap-6">
           <select
             className="w-full cursor-pointer rounded-md p-3"
             name="level"

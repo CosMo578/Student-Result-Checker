@@ -5,68 +5,13 @@ import { useState } from "react";
 import { Formik, Form } from "formik";
 import { useRouter } from "next/navigation";
 
-import { useField } from "formik";
-import { Eye, EyeOff } from "lucide-react";
+import { createClient } from "@/app/utils/supabase/client";
+import { useAuth } from "@/app/context/AuthContext";
+import { toastError, toastSuccess } from "@/app/utils/functions/toast";
+import { Bounce, ToastContainer } from "react-toastify";
 
-import { createClient } from "../../utils/supabase/client";
-import { useAuth } from "../../context/AuthContext";
-
-const PasswordInput = ({ label, ...props }) => {
-  const [field, meta] = useField(props);
-  const [showPassword, setShowPassword] = useState(false);
-
-  return (
-    <div>
-      <label
-        htmlFor={props.id || props.name}
-        className="mb-2 block text-sm font-medium text-gray-900"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-          type={showPassword ? "text" : "password"}
-          {...field}
-          {...props}
-        />
-        <button
-          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-2xl"
-          onClick={() => setShowPassword((prev) => !prev)}
-          type="button"
-        >
-          {showPassword ? <EyeOff /> : <Eye />}
-        </button>
-      </div>
-      {meta.touched && meta.error ? (
-        <div className="error text-red-600">{meta.error}</div>
-      ) : null}
-    </div>
-  );
-};
-
-const TextInput = ({ label, ...props }) => {
-  const [field, meta] = useField(props);
-
-  return (
-    <div>
-      <label
-        htmlFor={props.id || props.name}
-        className="mb-2 block text-sm font-medium text-gray-900"
-      >
-        {label}
-      </label>
-      <input
-        className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-        {...field}
-        {...props}
-      />
-      {meta.touched && meta.error ? (
-        <div className="error text-sm text-red-500">{meta.error}</div>
-      ) : null}
-    </div>
-  );
-};
+import PasswordInput from '@/components/PasswordInput'
+import TextInput from '@/components/TextInput'
 
 const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,9 +54,6 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
-      // Sign in using AuthContext's signIn function
-      await signIn(values.email, values.password);
-
       // Verify or store matNum in the users table
       const { data: userData, error: userError } = await supabase
         .from("users")
@@ -121,14 +63,17 @@ const Login = () => {
 
       if (userError && userError.code !== "PGRST116") {
         // PGRST116 is "no rows found" error
-        throw new Error("Error fetching user data: " + userError.message);
+        toastError("Error fetching user data: " + userError.message);
+        return;
       }
 
       if (userData && userData.mat_num !== values.matNum) {
-        throw new Error(
-          "Matriculation number does not match the registered user.",
-        );
+        toastError("Matriculation number does not match the registered user.");
+        return;
       }
+
+      // Sign in using AuthContext's signIn function
+      await signIn(values.email, values.password);
 
       // If no user data exists, insert it
       if (!userData) {
@@ -142,11 +87,10 @@ const Login = () => {
           );
         }
       }
-
-      alert("Login successful");
+      toastSuccess("Login successful");
       router.push("/dashboard"); // Redirect to your desired route
     } catch (error) {
-      alert("Login failed: " + error.message);
+      toastError("Login failed: " + error.message);
     } finally {
       setIsSubmitting(false);
       actions.setSubmitting(false);
@@ -154,7 +98,7 @@ const Login = () => {
   };
 
   return (
-    <section className="grid min-h-screen w-[100vw] py-10 lg:place-items-center">
+    <section className="grid min-h-screen my-20 lg:my-0 w-[100vw] py-10 lg:place-items-center">
       <Formik
         initialValues={initialValues}
         validationSchema={schemaObject}
@@ -202,6 +146,20 @@ const Login = () => {
           </p>
         </Form>
       </Formik>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Bounce}
+      />
     </section>
   );
 };
