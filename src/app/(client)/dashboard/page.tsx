@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { createClient } from "../../utils/supabase/client";
 import jsPDF from "jspdf";
-import html2canvas from 'html2canvas';
-import formatTableName from '../../utils/formatTitle';
+import html2canvas from "html2canvas";
+import formatTableName from "../../utils/formatTitle";
+import { toastWarn } from '@/app/utils/functions/toast';
 // import autoTable from "jspdf-autotable";
 
 export default function Dashboard() {
@@ -103,7 +104,7 @@ export default function Dashboard() {
   // Handle redirect to complaint page with query parameters
   const handleComplaintRedirect = () => {
     if (!queryData.level || !queryData.semester || !queryData.session) {
-      alert(
+      toastWarn(
         "Please select level, semester, and session before submitting a complaint.",
       );
       return;
@@ -211,7 +212,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen pt-20">
-        <h1 className="text-2xl capitalize font-bold mb-4">Fetch your result by filling all Input Fields</h1>
+      <h1 className="mb-4 text-2xl font-bold capitalize">
+        Fetch your result by filling all Input Fields
+      </h1>
 
       {/* Semester and Program Selector */}
       <form className="mt-4">
@@ -278,7 +281,7 @@ export default function Dashboard() {
 
       {loading && <p className="mt-4">Loading results...</p>}
 
-      {results.length > 0 && (
+      {results.length > 0 ? (
         <div className="mt-4">
           {results.map((result, id) => (
             <div
@@ -379,6 +382,8 @@ export default function Dashboard() {
             Submit a Complaint
           </button>
         </div>
+      ) : (
+        <h2 className="text-center text-xl font-semibold">No Result found</h2>
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import { FileText, LogOut, MessageSquareDot } from "lucide-react";
 import { Menu, MenuItem, MenuItems, MenuButton } from "@headlessui/react";
 import { useAuth } from "../app/context/AuthContext"; // Adjust path as needed
 import { createClient } from "../app/utils/supabase/client";
+import { toastError, toastInfo } from '@/app/utils/functions/toast';
 
 const NavBar = () => {
   const pathname = usePathname();
@@ -49,10 +50,11 @@ const NavBar = () => {
   // Handle sign-out
   const handleSignOut = async () => {
     try {
+      toastInfo('Logged out!! Redirecting...')
       await signOut();
       router.push("/login");
     } catch (error) {
-      alert("Sign-out failed: " + error.message);
+      toastError("Sign-out failed: " + error.message);
     }
   };
 

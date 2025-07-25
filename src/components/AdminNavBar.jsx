@@ -4,12 +4,12 @@ import Image from "next/image";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Upload } from "lucide-react";
+import { FileStack, LayoutDashboard, Upload } from "lucide-react";
 import { MessageSquareDot } from "lucide-react";
 import { Bounce, ToastContainer } from 'react-toastify';
 
 import { useAdmin } from "@/app/context/AdminAuthContext";
-import { toastInfo } from '@/app/utils/functions/toast';
+import { toastError, toastInfo } from '@/app/utils/functions/toast';
 
 const AdminNavBar = () => {
   const pathname = usePathname();
@@ -23,8 +23,9 @@ const AdminNavBar = () => {
     setClicked(prev => !prev)
     try {
       await signOut();
-      toastInfo('Sign out Successful')
+      toastInfo('Sign out Successful!! Redirecting...')
     } catch (error) {
+      toastError("Sign out error:", error);
       console.error("Sign out error:", error);
     }
     setClicked(prev => !prev)
@@ -95,6 +96,14 @@ const AdminNavBar = () => {
                 className={`${pathname == "/admin/dashboard" ? "bg-primary-100 text-white" : "bg-neutral-100 text-neutral-600"} group flex items-center gap-4 rounded-lg p-5`}
               >
                 <LayoutDashboard /> Dashboard
+              </li>
+            </Link>
+
+            <Link href="/admin/results">
+              <li
+                className={`${pathname == "/admin/results" ? "bg-primary-100 text-white" : "bg-neutral-100 text-neutral-600"} group flex items-center gap-4 rounded-lg p-5`}
+              >
+                <FileStack /> Results
               </li>
             </Link>
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { createClient } from "@/app/utils/supabase/client";
 import ComplaintForm from "@/components/ComplaintForm";
+import { toastError, toastSuccess } from '@/app/utils/functions/toast';
 
 export default function Complaint() {
   const { user } = useAuth();
@@ -56,11 +57,11 @@ export default function Complaint() {
 
       if (error) throw error;
 
-      alert("Complaint submitted successfully");
+      toastSuccess("Complaint submitted successfully");
       setComplaint("");
       router.push("/dashboard");
     } catch (error) {
-      alert("Error submitting complaint: " + (error as Error).message);
+      toastError("Error submitting complaint: " + (error as Error).message);
     } finally {
       setIsSubmitting(false);
     }

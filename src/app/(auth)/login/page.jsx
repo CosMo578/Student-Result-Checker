@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/app/utils/supabase/client";
 import { useAuth } from "@/app/context/AuthContext";
 import { toastError, toastSuccess } from "@/app/utils/functions/toast";
-import { Bounce, ToastContainer } from "react-toastify";
 
 import PasswordInput from '@/components/PasswordInput'
 import TextInput from '@/components/TextInput'
@@ -147,19 +146,6 @@ const Login = () => {
         </Form>
       </Formik>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        transition={Bounce}
-      />
     </section>
   );
 };

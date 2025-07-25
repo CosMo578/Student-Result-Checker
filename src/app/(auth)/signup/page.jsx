@@ -13,7 +13,6 @@ import {
   toastInfo,
   toastSuccess,
 } from "@/app/utils/functions/toast";
-import { Bounce, ToastContainer } from "react-toastify";
 
 import PasswordInput from "@/components/PasswordInput";
 import TextInput from "@/components/TextInput";
@@ -167,20 +166,6 @@ const Signup = () => {
           </p>
         </Form>
       </Formik>
-
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        transition={Bounce}
-      />
     </section>
   );
 };

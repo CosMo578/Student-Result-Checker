@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Outfit } from "next/font/google";
 import { AuthProvider } from "./context/AuthContext";
+import { Bounce, ToastContainer } from 'react-toastify';
 
 const outfit = Outfit({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -19,6 +20,19 @@ export default function RootLayout({ children }) {
       {/* className={outfit.className} */}
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick={false}
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          transition={Bounce}
+        />
       </body>
     </html>
   );

@@ -6,32 +6,44 @@ import { useEffect, useState } from "react";
 const Dashboard = () => {
   const [pendingComplaintsCount, setPendingComplaintsCount] = useState(0);
   const [resolvedComplaintsCount, setResolvedComplaintsCount] = useState(0);
+  const [resultsCount, setResultsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [complaints, setComplaints] = useState([]);
 
   // Fetch complaints and calculate counts
   useEffect(() => {
-    const fetchComplaints = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
         const supabase = createClient();
-        const { data, error } = await supabase.from("complaints").select("*");
 
-        if (error) throw error;
+        // Fetch complaints
+        const { data: complaintData, error: complaintError } = await supabase
+          .from("complaints")
+          .select("*");
 
-        console.log("Fetched complaints:", data);
-        setComplaints(data || []);
+        if (complaintError) throw complaintError;
 
-        // Calculate counts based on status
-        const pendingCount = data.filter(
+        // Fetch results
+        const { data: resultData, error: resultError } = await supabase
+          .from("results_metadata")
+          .select("*");
+        if (resultError) throw resultError;
+
+        console.log("Fetched complaints:", complaintData);
+        console.log("Fetched results:", resultData);
+
+        // Calculate complaint counts
+        const pendingCount = complaintData.filter(
           (complaint) => complaint.status.toLowerCase() === "pending",
         ).length;
-        const resolvedCount = data.filter(
+        const resolvedCount = complaintData.filter(
           (complaint) => complaint.status.toLowerCase() === "resolved",
         ).length;
+
         setPendingComplaintsCount(pendingCount);
         setResolvedComplaintsCount(resolvedCount);
+        setResultsCount(resultData.length);
       } catch (err) {
         console.error("Error fetching complaints:", err);
         setError(err.message);
@@ -40,38 +52,8 @@ const Dashboard = () => {
       }
     };
 
-    fetchComplaints();
+    fetchData();
   }, []);
-  // Placeholder data (replace with API calls)
-  const metrics = {
-    totalResults: 1200,
-    pendingComplaints: 15,
-    resolvedComplaints: 45,
-  };
-
-  const pendingComplaints = [
-    {
-      id: 123,
-      student: "John Doe",
-      course: "CS101",
-      date: "2025-07-20",
-      status: "Pending",
-    },
-    {
-      id: 124,
-      student: "Jane Smith",
-      course: "MATH201",
-      date: "2025-07-21",
-      status: "Pending",
-    },
-    {
-      id: 125,
-      student: "Ali Khan",
-      course: "PHY101",
-      date: "2025-07-22",
-      status: "Pending",
-    },
-  ];
 
   const recentActivity = [
     { action: "Results uploaded for CS101", date: "2025-07-23" },
@@ -82,6 +64,9 @@ const Dashboard = () => {
   return (
     <section className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto mt-20 max-w-screen-xl px-4 sm:px-6 lg:px-8">
+        {/* Error Display */}
+        {error && <div className="mb-4 text-red-500">{error}</div>}
+
         {/* Key Metrics */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-lg bg-white p-6 text-center shadow">
@@ -89,7 +74,7 @@ const Dashboard = () => {
               Total Results Uploaded
             </h2>
             <p className="text-2xl font-bold text-primary-300">
-              {metrics.totalResults}
+              {loading ? "Loading..." : resultsCount}
             </p>
           </div>
           <div className="rounded-lg bg-white p-6 text-center shadow">
@@ -112,12 +97,17 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="mb-8 flex justify-center gap-4">
-          <Link href="/upload">
+          <Link href="/admin/upload">
             <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500">
               Upload New Results
             </button>
           </Link>
-          <Link href="/complaints">
+          <Link href="/admin/results">
+            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500">
+              View All Results
+            </button>
+          </Link>
+          <Link href="/admin/complaints">
             <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500">
               View All Complaints
             </button>
@@ -125,7 +115,7 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activity Feed */}
-        <div className="mb-8 rounded-lg bg-white p-6 shadow">
+        {/* <div className="mb-8 rounded-lg bg-white p-6 shadow">
           <h2 className="mb-4 text-xl font-semibold text-gray-800">
             Recent Activity
           </h2>
@@ -137,10 +127,20 @@ const Dashboard = () => {
               </li>
             ))}
           </ul>
+        </div> */}
+
+        {/* Recent Activity Feed */}
+        <div className="pointer-events-none mb-8 select-none rounded-lg bg-white p-6 opacity-25 shadow">
+          <h2 className="mb-4 text-xl font-semibold text-gray-800">
+            Recent Activity
+          </h2>
+          <p className="text-gray-600">
+            Coming soon: Display recent activity from complaints and results.
+          </p>
         </div>
 
         {/* Placeholder for Future Result Updates */}
-        <div className="rounded-lg bg-white p-6 opacity-50 shadow">
+        <div className="pointer-events-none select-none rounded-lg bg-white p-6 opacity-25 shadow">
           <h2 className="mb-4 text-xl font-semibold text-gray-800">
             Pending Result Updates
           </h2>

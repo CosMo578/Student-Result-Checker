@@ -3,7 +3,8 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 import Papa from "papaparse"; // For CSV parsing
-import UploadComponent from '@/components/UploadComponent';
+import UploadComponent from "@/components/UploadComponent";
+import { toastError, toastSuccess, toastWarn } from '@/app/utils/functions/toast';
 
 const UploadResult = () => {
   const [files, setFiles] = useState([]);
@@ -20,7 +21,7 @@ const UploadResult = () => {
     e.preventDefault();
 
     if (files.length < 1) {
-      alert("A result file is required for a successful upload");
+      toastWarn("A result file is required for a successful upload");
       return;
     }
 
@@ -37,54 +38,60 @@ const UploadResult = () => {
 
       // Parse CSV file
       const text = await file.text();
-      const { data: csvData, errors } = Papa.parse(text, { header: true });
-
-      console.log("Process 1 Done");
+      const {
+        data: csvData,
+        meta,
+        errors,
+      } = Papa.parse(text, { header: true });
 
       if (errors.length > 0) {
         throw new Error("Invalid CSV format");
       }
 
-      // Create new table dynamically
+      // Get headers and sanitize for SQL
+      const headers = meta.fields || [];
+      if (headers.length === 0) {
+        throw new Error("No headers found in CSV");
+      }
+
+      // Map headers to SQL column definitions
+      const columnDefinitions = headers.map((header) => {
+        const safeColumnName = header
+          .replace(/[^a-zA-Z0-9_]/g, "_")
+          .toLowerCase();
+        // Infer column type based on header name (customize as needed)
+        if (
+          header.toLowerCase().includes("grade") ||
+          header.toLowerCase().includes("matriculation_number") ||
+          header.toLowerCase().includes("remarks")
+        ) {
+          return `${safeColumnName} VARCHAR(255)`;
+        } else if (
+          header.toLowerCase().includes("gpa") ||
+          header.toLowerCase().includes("tgp")
+        ) {
+          return `${safeColumnName} FLOAT`;
+        } else if (
+          header.toLowerCase().includes("units") ||
+          header.toLowerCase().includes("attendance")
+        ) {
+          return `${safeColumnName} INTEGER`;
+        } else {
+          return `${safeColumnName} VARCHAR(255)`; // Default to VARCHAR
+        }
+      });
+
+      // Create table SQL with dynamic columns
       const tableCreationSql = `
         CREATE TABLE ${safeTableName} (
           id SERIAL PRIMARY KEY,
-          matriculation_number VARCHAR(20) UNIQUE NOT NULL,
-          attendance_percent INTEGER,
-          com113_grade VARCHAR(2),
-          com113_units INTEGER,
-          com111_grade VARCHAR(2),
-          com111_units INTEGER,
-          com112_grade VARCHAR(2),
-          com112_units INTEGER,
-          com115_grade VARCHAR(2),
-          com115_units INTEGER,
-          com114_grade VARCHAR(2),
-          com114_units INTEGER,
-          mth111_grade VARCHAR(2),
-          mth111_units INTEGER,
-          gns101_grade VARCHAR(2),
-          gns101_units INTEGER,
-          gns127_grade VARCHAR(2),
-          gns127_units INTEGER,
-          pet101_grade VARCHAR(2),
-          pet101_units INTEGER,
-          ins104_grade VARCHAR(2),
-          ins104_units INTEGER,
-          tgp FLOAT,
-          gpa FLOAT,
-          remarks VARCHAR(50)
+          ${columnDefinitions.join(",\n          ")}
         );
       `;
-
-      console.log("Process 2 Done");
-
       const { error: creationError } = await supabase.rpc("create_table", {
         table_name: safeTableName,
         sql_query: tableCreationSql,
       });
-
-      console.log("Process 3 Done");
 
       if (creationError) throw creationError;
 
@@ -92,8 +99,6 @@ const UploadResult = () => {
       const { error: insertError } = await supabase
         .from(safeTableName)
         .insert(csvData);
-
-      console.log("Process 1 Done");
 
       if (insertError) throw insertError;
 
@@ -108,7 +113,18 @@ const UploadResult = () => {
 
       if (uploadError) throw uploadError;
 
-      alert("Result uploaded and table created successfully!");
+      // Insert table name into table metadata
+      const { error: metadataError } = await supabase
+        .from("results_metadata")
+        .insert([
+          {
+            table_name: safeTableName,
+          },
+        ]);
+
+      console.error(metadataError);
+
+      toastSuccess("Result uploaded and table created successfully!");
       setResultData({
         department: "",
         session: "",
@@ -118,7 +134,7 @@ const UploadResult = () => {
       setFiles([]);
     } catch (error) {
       console.error("Error processing result:", error);
-      alert(
+      toastError(
         "Failed to process result. Please check the CSV format or try again.",
       );
     } finally {
@@ -206,7 +222,7 @@ const UploadResult = () => {
 
         <div className="grid w-full grid-cols-2 items-center gap-8">
           <select
-            className="w-full p-3 cursor-pointer rounded-md "
+            className="w-full cursor-pointer rounded-md p-3"
             name="semester"
             id="semester"
             value={resultData.semester}

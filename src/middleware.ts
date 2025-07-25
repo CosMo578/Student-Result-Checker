@@ -48,8 +48,8 @@ export async function middleware(req: NextRequest) {
       .single();
 
     if (error || !adminData) {
-      console.log("[Middleware] Not an admin, redirecting to /login");
-      return NextResponse.redirect(new URL("/login?error=not_admin", req.url));
+      console.log("[Middleware] Not an admin, redirecting to /admin");
+      return NextResponse.redirect(new URL("/admin?error=not_authenticated", req.url));
     }
     console.log("[Middleware] Admin access granted");
   }

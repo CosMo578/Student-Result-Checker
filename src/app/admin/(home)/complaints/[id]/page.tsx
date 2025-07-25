@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/app/utils/supabase/client";
 import Spinner from "@/components/Spinner";
 import Link from "next/link";
+import { toastError, toastSuccess, toastWarn } from '@/app/utils/functions/toast';
 
 const EditComplain = () => {
   const params = useParams();
@@ -60,7 +61,7 @@ const EditComplain = () => {
   const updateResponse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminResponse || !complainID) {
-      alert("Please provide a response");
+      toastWarn("Please provide a response");
       return;
     }
 
@@ -81,12 +82,12 @@ const EditComplain = () => {
 
       if (error) throw error;
 
-      alert("Response sent successfully");
+      toastSuccess("Response sent successfully");
       setComplaint(data); // Update state with the new complaint data
       setAdminResponse(data.admin_response || "");
     } catch (error) {
       console.error("Update error:", error);
-      alert("Error updating response: " + (error as Error).message);
+      toastError("Error updating response: " + (error as Error).message);
     } finally {
       setSubmitting(false);
     }

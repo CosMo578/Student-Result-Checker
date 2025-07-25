@@ -8,8 +8,7 @@ import TextInput from "@/components/TextInput";
 import PasswordInput from "@/components/PasswordInput";
 
 import { useAdmin } from "@/app/context/AdminAuthContext";
-import { toastSuccess } from "../utils/functions/toast";
-import { Bounce, ToastContainer } from 'react-toastify';
+import { toastError, toastSuccess } from "../utils/functions/toast";
 
 export default function AdminLogin() {
   const { signIn } = useAdmin();
@@ -36,7 +35,7 @@ export default function AdminLogin() {
 
     try {
       await signIn(email, password);
-      toastSuccess("Signin Successful");
+      toastSuccess("Login Successful!! Redirecting...");
 
       setTimeout(() => router.push("/admin/dashboard"), 1000);
     } catch (err) {
@@ -77,24 +76,8 @@ export default function AdminLogin() {
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
         </Form>
       </Formik>
-
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        transition={Bounce}
-      />
     </section>
   );
 }
