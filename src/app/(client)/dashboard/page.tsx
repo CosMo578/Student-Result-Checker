@@ -6,7 +6,7 @@ import { createClient } from "../../utils/supabase/client";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import formatTableName from "../../utils/formatTitle";
-import { toastWarn } from '@/app/utils/functions/toast';
+import { toastWarn } from "@/app/utils/functions/toast";
 // import autoTable from "jspdf-autotable";
 
 export default function Dashboard() {
@@ -383,7 +383,12 @@ export default function Dashboard() {
           </button>
         </div>
       ) : (
-        <h2 className="text-center text-xl font-semibold">No Result found</h2>
+        <h2
+          className="text-center text-xl font-semibold"
+          style={{ display: (error || loading) && "none" }}
+        >
+          No Result found
+        </h2>
       )}
     </div>
   );

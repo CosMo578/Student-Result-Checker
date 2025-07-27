@@ -75,6 +75,7 @@ const Signup = () => {
       if (existingUser) {
         toastInfo("Matriculation number is already registered.");
       }
+      
       if (checkError && checkError.code !== "PGRST116") {
         // PGRST116: no rows found
         toastError(checkError);

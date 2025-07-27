@@ -4,7 +4,11 @@ import { X } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 import Papa from "papaparse"; // For CSV parsing
 import UploadComponent from "@/components/UploadComponent";
-import { toastError, toastSuccess, toastWarn } from '@/app/utils/functions/toast';
+import {
+  toastError,
+  toastSuccess,
+  toastWarn,
+} from "@/app/utils/functions/toast";
 
 const UploadResult = () => {
   const [files, setFiles] = useState([]);
@@ -43,6 +47,8 @@ const UploadResult = () => {
         meta,
         errors,
       } = Papa.parse(text, { header: true });
+
+      console.log(csvData);
 
       if (errors.length > 0) {
         throw new Error("Invalid CSV format");
@@ -122,7 +128,7 @@ const UploadResult = () => {
           },
         ]);
 
-      console.error(metadataError);
+      if (metadataError) throw metadataError;
 
       toastSuccess("Result uploaded and table created successfully!");
       setResultData({
@@ -132,6 +138,7 @@ const UploadResult = () => {
         level: "",
       });
       setFiles([]);
+      console.log(files)
     } catch (error) {
       console.error("Error processing result:", error);
       toastError(
