@@ -1,7 +1,7 @@
 import "./globals.css";
 import { Outfit } from "next/font/google";
 import { AuthProvider } from "./context/AuthContext";
-import { Bounce, ToastContainer } from 'react-toastify';
+import { Bounce, ToastContainer } from "react-toastify";
 
 const outfit = Outfit({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -17,8 +17,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      {/* className={outfit.className} */}
-      <body>
+      <body className={outfit.className}>
         <AuthProvider>{children}</AuthProvider>
         <ToastContainer
           position="top-right"
