@@ -1,18 +1,19 @@
-// app/complaints/page.tsx
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { createClient } from "@/app/utils/supabase/client";
 import ComplaintForm from "@/components/ComplaintForm";
-import { toastError, toastSuccess } from '@/app/utils/functions/toast';
+import { toastError, toastSuccess } from "@/app/utils/functions/toast";
 
 export default function Complaint() {
   const { user } = useAuth();
   const router = useRouter();
   const [complaint, setComplaint] = useState("");
+  const [tab, setTab] = useState("complaints");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matNum, setMatNum] = useState<string | null>(null);
+  const [responses, setResponses] = useState<any[]>([]); // State to store responses
 
   // Fetch matriculation number
   useEffect(() => {
@@ -39,6 +40,31 @@ export default function Complaint() {
 
     fetchMatNum();
   }, [user, router]);
+
+  // Fetch responses when tab is "responses" and matNum is available
+  useEffect(() => {
+    if (tab !== "responses" || !matNum) return;
+
+    const fetchResponses = async () => {
+      try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+          .from("complaints")
+          .select("*")
+          .eq("matriculation_number", matNum)
+          .not("admin_response", "is", null); // Fetch only records with admin_response
+
+        if (error) throw error;
+
+        setResponses(data || []);
+      } catch (err) {
+        console.error("Failed to fetch responses:", err);
+        setResponses([]);
+      }
+    };
+
+    fetchResponses();
+  }, [tab, matNum]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,32 +95,81 @@ export default function Complaint() {
 
   return (
     <div className="mt-20 min-h-screen">
-      <h1 className="mb-4 text-2xl font-bold">Submit a Complaint</h1>
-
-      <Suspense fallback={<div>Loading complaint form...</div>}>
-        <ComplaintForm
-          user={user}
-          matNum={matNum}
-          setComplaint={setComplaint}
-        />
-      </Suspense>
-
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
-        <textarea
-          className="w-full rounded-lg border border-gray-300 p-2"
-          value={complaint}
-          onChange={(e) => setComplaint(e.target.value)}
-          placeholder="Enter your complaint..."
-          rows={10}
-        />
+      <div className="mx-auto mb-10 flex w-fit items-center gap-3 rounded-full bg-gray-100 p-2">
         <button
-          className="rounded-lg bg-primary-100 px-4 py-2 text-white"
-          type="submit"
-          disabled={isSubmitting}
+          className={`rounded-full p-3 ${tab == "complaints" ? "bg-primary-100 text-white" : "bg-gray-200 text-gray-500"}`}
+          onClick={() => setTab("complaints")}
         >
-          {isSubmitting ? "Submitting..." : "Submit Complaint"}
+          Create Complaint
         </button>
-      </form>
+        <button
+          className={`rounded-full p-3 ${tab == "responses" ? "bg-primary-100 text-white" : "bg-gray-200 text-gray-500"}`}
+          onClick={() => setTab("responses")}
+        >
+          Admin Responses
+        </button>
+      </div>
+
+      {tab === "complaints" ? (
+        <div>
+          <h1 className="mb-4 text-2xl font-bold">Submit a Complaint</h1>
+
+          <Suspense fallback={<div>Loading complaint form...</div>}>
+            <ComplaintForm
+              user={user}
+              matNum={matNum}
+              setComplaint={setComplaint}
+            />
+          </Suspense>
+
+          <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
+            <textarea
+              className="w-full rounded-lg border border-gray-300 p-2"
+              value={complaint}
+              onChange={(e) => setComplaint(e.target.value)}
+              placeholder="Enter your complaint..."
+              rows={10}
+            />
+            <button
+              className="rounded-lg bg-primary-100 px-4 py-2 text-white"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Complaint"}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div>
+          <h1 className="mb-4 text-2xl font-bold">Admin Responses</h1>
+          {responses.length > 0 ? (
+            <div className="space-y-4">
+              {responses.map((response, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border border-gray-300 p-4"
+                >
+                  <p className="mb-2">
+                    <strong>Complaint:</strong> {response.content}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Response:</strong> {response.admin_response}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Status:</strong> {response.status}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Date:</strong>{" "}
+                    {new Date(response.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No responses available for your complaints.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

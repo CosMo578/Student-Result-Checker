@@ -11,7 +11,7 @@ const outfit = Outfit({
 export const metadata = {
   title: "Student Result Checker",
   description:
-    "A Student platform tailored to provide course materials, quizzes and an open chatroom for all to share knowledge and learn.",
+    "A Student platform tailored to make academic results easily accesible for institute students.",
 };
 
 export default function RootLayout({ children }) {

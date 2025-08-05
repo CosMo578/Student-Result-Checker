@@ -69,7 +69,8 @@ const UploadResult = () => {
         if (
           header.toLowerCase().includes("grade") ||
           header.toLowerCase().includes("matriculation_number") ||
-          header.toLowerCase().includes("remarks")
+          header.toLowerCase().includes("remarks") ||
+          header.toLowerCase().includes("names")
         ) {
           return `${safeColumnName} VARCHAR(255)`;
         } else if (

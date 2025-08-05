@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* *{
+  border: 1px solid red;
+} */
+
 .modal::backdrop {
   background: rgba(255, 255, 255, 0.29);
   border-radius: 16px;

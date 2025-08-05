@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import formatTableName from "../../utils/formatTitle";
 import { toastWarn } from "@/app/utils/functions/toast";
+import Image from "next/image";
 // import autoTable from "jspdf-autotable";
 
 export default function Dashboard() {
@@ -172,34 +173,82 @@ export default function Dashboard() {
   // };
 
   // Generate and download PDF
+  // const downloadPDF = async () => {
+  //   if (!tableRef.current) return;
+
+  //   const doc = new jsPDF();
+
+  //   const tableName = `(${queryData.level}_${queryData.semester}_${queryData.session})`;
+  //   const formattedTableName = formatTableName(tableName);
+
+  //   const canvas = await html2canvas(tableRef.current, { scale: 2 }); // Higher scale for better quality
+  //   const imgData = canvas.toDataURL("image/png");
+  //   const imgWidth = 190; // Width in mm (A4 page width is 210mm, leaving margins)
+  //   const pageHeight = 295; // A4 page height in mm
+  //   const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  //   let heightLeft = imgHeight;
+  //   let position = 20;
+
+  //   // Add image
+  //   doc.addImage(imgData, "PNG", 20, position, imgWidth, imgHeight);
+  //   heightLeft -= pageHeight;
+
+  //   // Handle multi-page if content is too tall
+  //   while (heightLeft >= 0) {
+  //     position = heightLeft - imgHeight + 10;
+  //     doc.addPage();
+  //     doc.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+  //     heightLeft -= pageHeight;
+  //   }
+
+  //   doc.save(
+  //     `results_${queryData.level}_${queryData.semester}_${queryData.session}.pdf`,
+  //   );
+  // };
+
   const downloadPDF = async () => {
     if (!tableRef.current) return;
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
 
     const tableName = `(${queryData.level}_${queryData.semester}_${queryData.session})`;
     const formattedTableName = formatTableName(tableName);
 
-    // Add formatted title
-    doc.text(`Results for ${matNum} - ${formattedTableName}`, 10, 10);
-
+    // Capture the table content
     const canvas = await html2canvas(tableRef.current, { scale: 2 }); // Higher scale for better quality
     const imgData = canvas.toDataURL("image/png");
-    const imgWidth = 190; // Width in mm (A4 page width is 210mm, leaving margins)
-    const pageHeight = 295; // A4 page height in mm
+
+    // Calculate dimensions
+    const pageWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
+    const imgWidth = 190; // Width in mm, leaving 10mm margins on both sides
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 20;
 
-    // Add image
-    doc.addImage(imgData, "PNG", 20, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // Calculate centering positions
+    const marginX = (pageWidth - imgWidth) / 2; // Horizontal centering
+    const marginY = (pageHeight - imgHeight) / 2; // Vertical centering
+    let positionY = marginY > 0 ? marginY : 10; // Ensure position doesn't go negative, use 10mm as minimum
 
-    // Handle multi-page if content is too tall
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight + 10;
+    // Add title (centered)
+    doc.setFontSize(16);
+    const titleWidth =
+      (doc.getStringUnitWidth(`Results for ${matNum} - ${formattedTableName}`) *
+        16) /
+      doc.internal.scaleFactor;
+    const titleX = (pageWidth - titleWidth) / 2;
+
+    // Add image (centered)
+    doc.addImage(imgData, "PNG", marginX, positionY, imgWidth, imgHeight);
+
+    // Handle multi-page if content exceeds page height
+    let heightLeft = imgHeight + positionY - pageHeight;
+    while (heightLeft > 0) {
       doc.addPage();
-      doc.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      doc.addImage(imgData, "PNG", marginX, 10, imgWidth, imgHeight); // Start at top of new page
       heightLeft -= pageHeight;
     }
 
@@ -282,90 +331,161 @@ export default function Dashboard() {
       {loading && <p className="mt-4">Loading results...</p>}
 
       {results.length > 0 ? (
-        <div className="mt-4">
-          {results.map((result, id) => (
-            <div
-              key={id}
-              ref={tableRef}
-              className="rounded-md bg-gray-300 px-4 py-10"
-            >
-              <h2 className="px-6">
-                MATRICULATION NUBER: {result.matriculation_number}
-              </h2>
+        <div className="bg-gray-300 p-6">
+          <div
+            ref={tableRef}
+            className="rounded-lg border-2 border-black bg-white"
+          >
+            <div className="mt-10 space-y-6">
+              <Image
+                className="mx-auto"
+                src="/pti-logo.svg"
+                alt="PTI logo"
+                width={90}
+                height={90}
+              />
 
-              <div className="relative overflow-x-auto">
-                <table className="my-8 w-full bg-gray-300 text-left text-sm text-gray-500 rtl:text-right">
-                  <thead className="bg-gray-300 text-xs uppercase text-gray-700">
-                    <tr>
-                      <th scope="col" className="px-6 py-3">
-                        Course Code
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Units
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Score
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Grade
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.keys(result)
-                      .filter((key) => key.endsWith("_grade")) // Get keys like com113_grade, com111_grade, etc.
-                      .map((gradeKey, index) => {
-                        const courseCode = gradeKey
-                          .replace("_grade", "")
-                          .toUpperCase(); // Extract course code (e.g., COM113)
-                        const unitsKey = gradeKey.replace("_grade", "_units"); // Corresponding units key (e.g., com113_units)
-                        const score = result[gradeKey] || "-"; // Get score or fallback to '-'
-                        const units = result[unitsKey] || "-"; // Get units or fallback to '-'
-                        const getGrade = (score) => {
-                          if (typeof score !== "number" || isNaN(score))
-                            return "-";
-                          score;
-                          if (score >= 75) return "A";
-                          if (score >= 70) return "AB";
-                          if (score >= 65) return "B";
-                          if (score >= 60) return "BC";
-                          if (score >= 55) return "C";
-                          if (score >= 50) return "CD";
-                          if (score >= 45) return "D";
-                          if (score >= 40) return "E";
-                          return "F";
-                        };
-                        const grade = getGrade(parseInt(score, 10));
+              <div className="space-y-4">
+                <h1 className="text-center text-xl font-semibold">
+                  PETROLEUM TRAINING INSTITUTE, EFFURUN
+                </h1>
+                <h2 className="text-center text-lg font-semibold">
+                  END OF SEMESTER ACADEMIC RESULT
+                </h2>
+              </div>
 
-                        return (
-                          <tr
-                            key={index}
-                            className="border-b border-gray-200 bg-gray-300 text-gray-900"
-                          >
-                            <th
-                              scope="row"
-                              className="whitespace-nowrap px-6 py-4 font-medium"
-                            >
-                              {courseCode}
-                            </th>
-                            <td className="px-6 py-4">{units}</td>
-                            <td className="px-6 py-4">{score}</td>
-                            <td className="px-6 py-4">{grade}</td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-
-                <div className="grid grid-cols-3">
-                  <h2>TGP: {result.tgp}</h2>
-                  <h2>GPA: {result.gpa}</h2>
-                  <h2>REMARK: {result.remarks}</h2>
-                </div>
+              <div className="mx-auto flex max-w-min items-center justify-center border border-black p-1">
+                {queryData.session.replace("_", "/")}
               </div>
             </div>
-          ))}
 
+            {results.map((result, id) => (
+              <div key={id} className="my-10 rounded-md px-8">
+                <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 items-center border-b border-black p-2">
+                    <h2 className="flex flex-col gap-1 px-6">
+                      <span className="text-lg font-semibold">
+                        {result.names}
+                      </span>
+                      <span className="text-sm">Student Name</span>
+                    </h2>
+
+                    <h2 className="flex flex-col gap-1 px-6">
+                      <span className="text-lg font-semibold">
+                        {result.matriculation_number}
+                      </span>
+                      <span className="text-sm">Matriculation Number</span>
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-2 items-center border-b border-black p-2">
+                    <h2 className="flex flex-col gap-1 px-6">
+                      <span className="text-lg font-semibold uppercase">
+                        {queryData.level.replace("_", " ")}
+                      </span>
+                      <span className="text-sm">Level</span>
+                    </h2>
+
+                    <h2 className="flex flex-col gap-1 px-6">
+                      <span className="text-lg font-semibold capitalize">
+                        {queryData.semester.replace("_", " ")}
+                      </span>
+                      <span className="text-sm">Semester</span>
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="relative mt-12 overflow-x-auto">
+                  <table className="my-8 w-full text-left text-sm text-gray-500 rtl:text-right">
+                    <thead className="text-xs uppercase text-gray-700">
+                      <tr>
+                        <th scope="col" className="px-6 py-3">
+                          S/N
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Course Code
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Units
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Score
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                          Grade
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.keys(result)
+                        .filter((key) => key.endsWith("_grade")) // Get keys like com113_grade, com111_grade, etc.
+                        .map((gradeKey, index) => {
+                          const courseCode = gradeKey
+                            .replace("_grade", "")
+                            .toUpperCase(); // Extract course code (e.g., COM113)
+                          const unitsKey = gradeKey.replace("_grade", "_units"); // Corresponding units key (e.g., com113_units)
+                          const score = result[gradeKey] || "-"; // Get score or fallback to '-'
+                          const units = result[unitsKey] || "-"; // Get units or fallback to '-'
+                          const getGrade = (score) => {
+                            if (typeof score !== "number" || isNaN(score))
+                              return "-";
+                            score;
+                            if (score >= 75) return "A";
+                            if (score >= 70) return "AB";
+                            if (score >= 65) return "B";
+                            if (score >= 60) return "BC";
+                            if (score >= 55) return "C";
+                            if (score >= 50) return "CD";
+                            if (score >= 45) return "D";
+                            if (score >= 40) return "E";
+                            return "F";
+                          };
+                          const grade = getGrade(parseInt(score, 10));
+
+                          return (
+                            <tr
+                              key={index}
+                              className="border-b border-black text-gray-900"
+                            >
+                              <td className="px-6 py-4">{index + 1}</td>
+
+                              <th
+                                scope="row"
+                                className="whitespace-nowrap px-6 py-4 font-medium"
+                              >
+                                {courseCode}
+                              </th>
+                              <td className="px-6 py-4">{units}</td>
+                              <td className="px-6 py-4">{score}</td>
+                              <td className="px-6 py-4">{grade}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+
+                  <div className="grid grid-cols-4">
+                    <h2>TGP: {result.tgp}</h2>
+                    <h2>GPA: {result.gpa}</h2>
+                    <h2>REMARK: {result.remarks}</h2>
+                    <h2>ATTENDANCE: {result.attendance_percent}</h2>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <h2
+          className="text-center text-xl font-semibold"
+          style={{ display: (error || loading) && "none" }}
+        >
+          No Result found
+        </h2>
+      )}
+
+      {results.length > 0 && (
+        <>
           <button
             className="mt-4 rounded-lg bg-primary-100 px-4 py-2 text-white"
             onClick={downloadPDF}
@@ -381,14 +501,7 @@ export default function Dashboard() {
           >
             Submit a Complaint
           </button>
-        </div>
-      ) : (
-        <h2
-          className="text-center text-xl font-semibold"
-          style={{ display: (error || loading) && "none" }}
-        >
-          No Result found
-        </h2>
+        </>
       )}
     </div>
   );

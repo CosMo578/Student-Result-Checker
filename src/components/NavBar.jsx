@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FileText, LogOut, MessageSquareDot } from "lucide-react";
 import { Menu, MenuItem, MenuItems, MenuButton } from "@headlessui/react";
