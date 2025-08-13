@@ -116,7 +116,7 @@ const EditComplain = () => {
         <p>No complaint found</p>
       ) : (
         <div className="mt-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-row max-md:flex-col md:items-center justify-between">
             <p>
               <strong>Email:</strong> {complaint.user_email || "N/A"}
             </p>
@@ -145,7 +145,7 @@ const EditComplain = () => {
               />
             </label>
 
-            <div className="flex w-2/6 cursor-pointer items-center rounded-md border border-gray-500 bg-gray-200 ps-4">
+            <div className="flex md:w-2/6 cursor-pointer items-center rounded-md border border-gray-500 bg-gray-200 ps-4">
               <input
                 id="status"
                 type="checkbox"

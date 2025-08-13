@@ -96,19 +96,19 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-8 flex justify-center gap-4">
-          <Link href="/admin/upload">
-            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500">
+        <div className="mb-8 flex justify-center gap-4 max-md:flex-col max-md:items-center max-md:justify-stretch">
+          <Link href="/admin/upload" className="max-md:w-full">
+            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500 max-md:w-full">
               Upload New Results
             </button>
           </Link>
-          <Link href="/admin/results">
-            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500">
+          <Link href="/admin/results" className='max-md:w-full'>
+            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500 max-md:w-full">
               View All Results
             </button>
           </Link>
-          <Link href="/admin/complaints">
-            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500">
+          <Link href="/admin/complaints" className='max-md:w-full'>
+            <button className="rounded-lg bg-primary-300 px-6 py-3 font-semibold text-white hover:bg-primary-500 max-md:w-full">
               View All Complaints
             </button>
           </Link>

@@ -70,7 +70,7 @@ const AdminNavBar = () => {
 
               <h1 className="flex items-center gap-2">
                 Hello Admin,
-                {admin && <p className="text-sm">{admin.email}</p>}
+                {admin && <p className="text-sm max-md:hidden">{admin.email}</p>}
               </h1>
             </div>
 

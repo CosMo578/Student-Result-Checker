@@ -138,8 +138,8 @@ const UploadResult = () => {
         semester: "",
         level: "",
       });
-      setFiles([]);
-      console.log(files)
+      files.pop();
+      console.log(files);
     } catch (error) {
       console.error("Error processing result:", error);
       toastError(
@@ -151,10 +151,17 @@ const UploadResult = () => {
   };
 
   return (
-    <section>
+    <section className="mt-20 px-6 lg:max-w-[90%] flex flex-col items-center">
+      <div className='w-full'>
+        <h2 className='text-2xl font-semibold'>Tips for Uploading Result</h2>
+        <ol className="list-decimal list-inside">
+          <li>All headers must be in lowercase format</li>
+          <li>Use underscore (_) instead of spaces for headers</li>
+        </ol>
+      </div>
       <form
         onSubmit={handleResultUploading}
-        className="mx-auto flex flex-col items-center space-y-4 px-4 pb-8 pt-20 lg:max-w-[80%]"
+        className="w-full space-y-4 pb-8 pt-8"
       >
         <UploadComponent setFiles={setFiles} />
 
@@ -180,7 +187,7 @@ const UploadResult = () => {
           ))}
         </div>
 
-        <div className="grid w-full grid-cols-2 items-center gap-8">
+        <div className="grid w-full md:grid-cols-2 items-center gap-8">
           <select
             className="w-full cursor-pointer rounded-md p-3"
             name="level"
@@ -228,7 +235,7 @@ const UploadResult = () => {
           </select>
         </div>
 
-        <div className="grid w-full grid-cols-2 items-center gap-8">
+        <div className="grid w-full md:grid-cols-2 items-center gap-8">
           <select
             className="w-full cursor-pointer rounded-md p-3"
             name="semester"
@@ -247,7 +254,7 @@ const UploadResult = () => {
           </select>
 
           <input
-            className="rounded-md"
+            className="rounded-md p-3"
             type="text"
             placeholder="Session e.g (2022/2023)"
             value={resultData.session}
