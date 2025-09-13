@@ -335,6 +335,7 @@ const UploadResult = () => {
       setUploading(false);
     }
   };
+  
   return (
     <section className="mt-20 flex flex-col items-center px-6 lg:max-w-[90%]">
       <div className="w-full">

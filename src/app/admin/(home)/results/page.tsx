@@ -1,10 +1,11 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { createClient } from "@/app/utils/supabase/client";
 import { Spinner } from "flowbite-react";
-import { toastSuccess } from '@/app/utils/functions/toast';
+import { toastSuccess, toastError } from "@/app/utils/functions/toast";
 
 interface ResultTable {
   table_name: string;
@@ -27,15 +28,15 @@ export default function ResultsAll() {
   const [editingData, setEditingData] = useState<TableRow[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Fetch table names starting with "csit"
-  useEffect(() => {
+  /* Fetch all results tables (all departments) */
+   useEffect(() => {
+    setLoading(true)
     const fetchTables = async () => {
       try {
         const supabase = await createClient();
         const { data, error } = await supabase
           .from("results_metadata")
           .select("table_name, uploaded_at")
-          .ilike("table_name", "csit%")
           .order("uploaded_at", { ascending: false });
 
         if (error) throw error;
@@ -103,6 +104,102 @@ export default function ResultsAll() {
     }
   };
 
+  // Handle delete table
+  const handleDelete = async (tableName: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${tableName}? This will also delete associated files from cloud storage.`,
+      )
+    )
+      return;
+
+    setLoading(true);
+    try {
+      const supabase = await createClient();
+
+      // Step 1: Delete file from cloud storage (reverse of upload)
+      try {
+        const filePath = `uploads/${tableName}.csv`;
+        const { error: deleteFileError } = await supabase.storage
+          .from("results")
+          .remove([filePath]);
+
+        if (deleteFileError) {
+          // Check if file not found (404) - that's okay
+          if (
+            deleteFileError.message.includes("404") ||
+            deleteFileError.message.includes("not found")
+          ) {
+            console.log("No CSV file found in storage to delete.");
+          } else {
+            console.warn(
+              "Warning: Failed to delete storage file:",
+              deleteFileError.message,
+            );
+          }
+        } else {
+          console.log("CSV file deleted successfully from storage.");
+        }
+      } catch (storageErr) {
+        console.warn("Storage cleanup error:", storageErr);
+        // Continue with other deletions even if storage fails
+      }
+
+      // Step 2: Delete metadata entry
+      const { error: metaError } = await supabase
+        .from("results_metadata")
+        .delete()
+        .eq("table_name", tableName);
+
+      if (metaError) {
+        // Check if it's a "no rows" error (which is actually success for deletion)
+        if (
+          metaError.message.includes("no rows") ||
+          metaError.code === "PGRST116"
+        ) {
+          console.log("Metadata entry already deleted or not found.");
+        } else {
+          throw new Error(`Failed to delete metadata: ${metaError.message}`);
+        }
+      } else {
+        console.log("Metadata entry deleted successfully.");
+      }
+
+      // Step 3: Delete table data
+      const { error: tableError } = await supabase.rpc("drop_table_if_exists", {
+        table_name: tableName,
+      });
+
+      if (tableError) {
+        // Check if table already doesn't exist
+        if (tableError.message.includes("does not exist")) {
+          console.log("Table already does not exist.");
+        } else {
+          throw tableError;
+        }
+      } else {
+        console.log("Table dropped successfully.");
+      }
+
+      // Update UI
+      setTables((prev) =>
+        prev.filter((table) => table.table_name !== tableName),
+      );
+      if (selectedTable === tableName) {
+        setSelectedTable(null);
+        setTableData([]);
+        setEditingData([]);
+      }
+
+      toastSuccess("Table and associated data deleted successfully");
+    } catch (err: any) {
+      console.error("Failed to delete table:", err);
+      toastError(`Failed to delete table: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return <Spinner />;
   }
@@ -113,7 +210,7 @@ export default function ResultsAll() {
 
   return (
     <div className="mt-20 min-h-screen p-4">
-      <h1 className="mb-4 text-2xl font-bold">All CSIT Results</h1>
+      <h1 className="mb-4 text-2xl font-bold">All Results</h1>
       {tables.length === 0 ? (
         <p>No results found.</p>
       ) : (
@@ -144,9 +241,15 @@ export default function ResultsAll() {
                   <td className="border border-gray-300 px-4 py-2">
                     <button
                       onClick={() => handleEditClick(table.table_name)}
-                      className="text-blue-600 hover:underline"
+                      className="me-4 rounded-lg bg-primary-100 px-2 py-1 text-white"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(table.table_name)}
+                      className="rounded-lg bg-red-400 px-2 py-1 text-white"
+                    >
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -162,6 +265,7 @@ export default function ResultsAll() {
           <h2 className="mb-4 text-xl font-semibold">
             Editing: {selectedTable}
           </h2>
+
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <table className="w-full text-left text-sm text-gray-700 rtl:text-right">
               <thead className="bg-gray-50 text-xs uppercase text-gray-900">
@@ -176,6 +280,7 @@ export default function ResultsAll() {
                   ))}
                 </tr>
               </thead>
+
               <tbody>
                 {editingData.map((row, rowIndex) => (
                   <tr key={row.id} className="hover:bg-gray-50">
@@ -199,6 +304,7 @@ export default function ResultsAll() {
               </tbody>
             </table>
           </div>
+
           <button
             onClick={handleUpdate}
             disabled={isUpdating}
